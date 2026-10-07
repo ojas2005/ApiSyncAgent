@@ -14,3 +14,10 @@ SKIP_DIRS = {"node_modules", ".git", "dist", "build", ".next", "coverage"}
 
 def expression(node):
     return ast.unparse(node) if node is not None else ""
+
+
+def literal(node):
+    try:
+        return ast.literal_eval(node)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        return None
