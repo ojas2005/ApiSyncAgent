@@ -35,3 +35,28 @@ def short_name(node):
 
 def model_references(node, known):
     return sorted({n.id for n in ast.walk(node) if isinstance(n, ast.Name) and n.id in known})
+
+
+def field_details(statement):
+    annotation = expression(statement.annotation)
+    default = statement.value
+    required = default is None or (isinstance(default, ast.Constant) and default.value is Ellipsis)
+    alias = None
+    serialization_alias = None
+    if isinstance(default, ast.Call) and short_name(default.func) == "Field":
+        for keyword in default.keywords:
+            if keyword.arg in {"alias", "serialization_alias"}:
+                value = literal(keyword.value)
+                if isinstance(value, str):
+                    if keyword.arg == "serialization_alias":
+                        serialization_alias = value
+                    else:
+                        alias = value
+            if keyword.arg in {"default", "default_factory"}:
+                required = isinstance(keyword.value, ast.Constant) and keyword.value.value is Ellipsis
+        if default.args:
+            required = isinstance(default.args[0], ast.Constant) and default.args[0].value is Ellipsis
+        elif not any(k.arg in {"default", "default_factory"} for k in default.keywords):
+            required = True
+    return {"name": serialization_alias or alias or statement.target.id,
+            "type": annotation, "required": required}
