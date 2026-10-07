@@ -21,3 +21,13 @@ def literal(node):
         return ast.literal_eval(node)
     except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
         return None
+
+
+def short_name(node):
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    if isinstance(node, ast.Subscript):
+        return short_name(node.value)
+    return ""
