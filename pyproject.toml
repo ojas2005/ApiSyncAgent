@@ -1,3 +1,11 @@
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "api-contract-sync-agent"
+version = "0.1.0"
+description = "Detect FastAPI/Pydantic response contract changes and locate TypeScript consumers"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
