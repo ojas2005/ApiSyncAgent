@@ -31,3 +31,7 @@ def short_name(node):
     if isinstance(node, ast.Subscript):
         return short_name(node.value)
     return ""
+
+
+def model_references(node, known):
+    return sorted({n.id for n in ast.walk(node) if isinstance(n, ast.Name) and n.id in known})
