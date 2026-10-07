@@ -12,3 +12,5 @@ TS_EXTENSIONS = {".ts", ".tsx", ".js", ".jsx"}
 SKIP_DIRS = {"node_modules", ".git", "dist", "build", ".next", "coverage"}
 
 
+def expression(node):
+    return ast.unparse(node) if node is not None else ""
