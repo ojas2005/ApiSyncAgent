@@ -154,3 +154,27 @@ def scan_directory(backend):
     files = sorted(path for path in backend.rglob("*.py")
                    if not any(part in SKIP_DIRS for part in path.parts))
     return parse_sources((str(path.relative_to(backend)), path.read_text(encoding="utf-8")) for path in files)
+
+
+def scan_git_ref(backend, ref):
+    backend = Path(backend).resolve()
+
+    def git(*args, cwd=None):
+        result = subprocess.run(["git", *args], cwd=str(cwd or backend), text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode:
+            raise ValueError("git {} failed: {}".format(" ".join(args), result.stderr.strip()))
+        return result.stdout
+
+    root = Path(git("rev-parse", "--show-toplevel").strip())
+    try:
+        relative = backend.relative_to(root).as_posix()
+    except ValueError as exc:
+        raise ValueError("Backend must be inside the Git repository") from exc
+    names = git("ls-tree", "-r", "--name-only", ref, "--", relative, cwd=root).splitlines()
+    sources = []
+    for name in names:
+        if name.endswith(".py") and not any(part in SKIP_DIRS for part in Path(name).parts):
+            content = git("show", "{}:{}".format(ref, name), cwd=root)
+            sources.append((str(Path(name).relative_to(relative)), content))
+    return parse_sources(sources)
