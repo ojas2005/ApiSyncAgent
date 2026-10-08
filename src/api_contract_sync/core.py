@@ -324,3 +324,50 @@ def render_types(contract):
                                               ts_type(info["type"], contract["models"])))
         lines.extend(["}", ""])
     return "\n".join(lines)
+
+
+def render_report(changes, uses):
+    breaking = sum(change["breaking"] for change in changes)
+    lines = ["# API contract integration checklist", "",
+             "{} change(s), {} potentially breaking.".format(len(changes), breaking), ""]
+    if not changes:
+        lines.append("No response contract changes detected.")
+        return "\n".join(lines) + "\n"
+    labels = {
+        "model_removed": "Model removed", "model_added": "Model added",
+        "field_removed": "Field removed", "field_added": "Field added",
+        "field_type_changed": "Field type changed", "field_became_optional": "Field became optional",
+        "field_became_required": "Field became required", "route_removed": "Route removed",
+        "route_added": "Route added", "route_response_changed": "Route response changed",
+    }
+    additions = {}
+    for change in changes:
+        if change["kind"] == "field_added":
+            additions.setdefault(change["model"], []).append(change)
+    for index, change in enumerate(changes):
+        target = change["route"] or change["model"]
+        if change["field"]:
+            target += "." + change["field"]
+        lines.append("- [ ] **{}:** {} — {}{}".format(
+            "BREAKING" if change["breaking"] else "Review", labels[change["kind"]],
+            target, " ({} → {})".format(change["old"], change["new"])
+            if change["old"] is not None and change["new"] is not None else ""))
+        if change["kind"] == "field_removed":
+            candidates = [c["field"] for c in additions.get(change["model"], [])
+                          if c["new"]["type"] == change["old"]["type"]]
+            if len(candidates) == 1:
+                lines.append("  - Possible rename: update `{}.{}` to `{}.{}` after confirming API semantics.".format(
+                    change["model"], change["field"], change["model"], candidates[0]))
+        if change["kind"] in {"field_type_changed", "field_became_optional"}:
+            lines.append("  - Update frontend handling for the new value type or missing value.")
+        for hit in uses.get(index, []):
+            lines.append("  - Candidate consumer ({}): `{}:{}` — `{}`".format(
+                hit["confidence"], hit["file"], hit["line"], hit["text"].replace("`", "'")))
+        if change["breaking"] and not uses.get(index):
+            lines.append("  - Search frontend callers and tests for this contract.")
+    lines.extend(["", "## Integration steps", "",
+                  "- [ ] Review each candidate consumer and update field access, types, and UI behavior.",
+                  "- [ ] Regenerate TypeScript interfaces and review the diff.",
+                  "- [ ] Run frontend type checks and integration tests against the changed API.",
+                  "- [ ] Deploy compatible backend and frontend versions together, or provide a migration window.", ""])
+    return "\n".join(lines)
