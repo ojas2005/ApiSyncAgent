@@ -268,3 +268,47 @@ def frontend_uses(frontend, changes, before, after):
                              "text": line.strip()[:180], "confidence": "model/route" if relevant else "field-only"})
         usage[index] = sorted(hits, key=lambda hit: hit["confidence"] != "model/route")[:25]
     return usage
+
+
+def ts_type(type_text, model_names=()):
+    try:
+        node = ast.parse(type_text, mode="eval").body
+    except SyntaxError:
+        return "unknown"
+
+    def convert(n):
+        if isinstance(n, ast.Name):
+            mapped = {"str": "string", "int": "number", "float": "number", "bool": "boolean",
+                    "None": "null", "Any": "unknown", "dict": "Record<string, unknown>",
+                    "datetime": "string", "date": "string", "time": "string",
+                    "UUID": "string", "Decimal": "string", "bytes": "string",
+                    "EmailStr": "string", "HttpUrl": "string", "AnyUrl": "string",
+                    "PositiveInt": "number", "NonNegativeInt": "number"}.get(n.id)
+            return mapped if mapped is not None else (n.id if n.id in model_names else "unknown")
+        if isinstance(n, ast.Constant):
+            return "null" if n.value is None else json.dumps(n.value)
+        if isinstance(n, ast.BinOp) and isinstance(n.op, ast.BitOr):
+            return "{} | {}".format(convert(n.left), convert(n.right))
+        if isinstance(n, ast.Subscript):
+            name = short_name(n.value)
+            args = n.slice.elts if isinstance(n.slice, ast.Tuple) else [n.slice]
+            if name in {"list", "List", "Sequence", "set", "Set"}:
+                return "Array<{}>".format(convert(args[0]))
+            if name in {"dict", "Dict", "Mapping"} and len(args) == 2:
+                return "Record<{}, {}>".format(convert(args[0]), convert(args[1]))
+            if name == "Optional":
+                return "{} | null".format(convert(args[0]))
+            if name == "Union":
+                return " | ".join(convert(arg) for arg in args)
+            if name == "Literal":
+                return " | ".join(convert(arg) for arg in args)
+            if name in {"tuple", "Tuple"}:
+                return "[{}]".format(", ".join(convert(arg) for arg in args))
+            if name == "Annotated":
+                return convert(args[0])
+            return "unknown"
+        if isinstance(n, ast.Attribute):
+            return convert(ast.Name(id=n.attr, ctx=ast.Load()))
+        return "unknown"
+
+    return convert(node)
