@@ -221,3 +221,50 @@ def compare_contracts(before, after):
                 old=old_routes[route]["response"], new=new_routes[route]["response"],
                 breaking=True, route=route)
     return changes
+
+
+def frontend_uses(frontend, changes, before, after):
+    """Find candidate consumer lines; these are hints, not a data-flow proof."""
+    frontend = Path(frontend)
+    if not frontend.is_dir():
+        raise ValueError("Frontend directory does not exist: {}".format(frontend))
+    files = sorted(path for path in frontend.rglob("*") if path.suffix in TS_EXTENSIONS
+                   and not any(part in SKIP_DIRS for part in path.parts))
+    route_paths = {}
+    for contract in (before, after):
+        for route, details in contract["routes"].items():
+            path = route.split(" ", 1)[1]
+            prefix = re.sub(r"\{[^}]+\}", "", path).rstrip("/")
+            for model in details["models"]:
+                route_paths.setdefault(model, set()).add(prefix)
+    usage = {}
+    for index, change in enumerate(changes):
+        model = change["model"]
+        field = change["field"]
+        if ", " in model:
+            model_names = model.split(", ")
+        else:
+            model_names = [model]
+        hits = []
+        for path in files:
+            content = path.read_text(encoding="utf-8", errors="replace")
+            relevant = any(re.search(r"\b{}\b".format(re.escape(name)), content) for name in model_names)
+            relevant = relevant or any(prefix and prefix in content for name in model_names
+                                       for prefix in route_paths.get(name, set()))
+            if not relevant and not field:
+                continue
+            for line_no, line in enumerate(content.splitlines(), 1):
+                if field:
+                    pattern = r"(?:\.\s*|[\[\{]\s*['\"]?)" + re.escape(field) + r"\b"
+                    declaration = r"\b" + re.escape(field) + r"\s*:"
+                    if not (re.search(pattern, line) or re.search(declaration, line)):
+                        continue
+                elif not any(re.search(r"\b{}\b".format(re.escape(name)), line)
+                             for name in model_names) and not any(
+                                 prefix and prefix in line for name in model_names
+                                 for prefix in route_paths.get(name, set())):
+                    continue
+                hits.append({"file": str(path.relative_to(frontend)), "line": line_no,
+                             "text": line.strip()[:180], "confidence": "model/route" if relevant else "field-only"})
+        usage[index] = sorted(hits, key=lambda hit: hit["confidence"] != "model/route")[:25]
+    return usage
