@@ -145,3 +145,12 @@ def parse_sources(sources):
                     raise ValueError("Duplicate route {}".format(key))
                 routes[key] = {"file": path, "response": expression(response), "models": refs}
     return {"format_version": 1, "models": models, "routes": dict(sorted(routes.items()))}
+
+
+def scan_directory(backend):
+    backend = Path(backend)
+    if not backend.is_dir():
+        raise ValueError("Backend directory does not exist: {}".format(backend))
+    files = sorted(path for path in backend.rglob("*.py")
+                   if not any(part in SKIP_DIRS for part in path.parts))
+    return parse_sources((str(path.relative_to(backend)), path.read_text(encoding="utf-8")) for path in files)
