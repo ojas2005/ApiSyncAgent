@@ -178,3 +178,46 @@ def scan_git_ref(backend, ref):
             content = git("show", "{}:{}".format(ref, name), cwd=root)
             sources.append((str(Path(name).relative_to(relative)), content))
     return parse_sources(sources)
+
+
+def compare_contracts(before, after):
+    changes = []
+
+    def add(kind, model, field=None, old=None, new=None, breaking=False, route=None):
+        changes.append({"kind": kind, "model": model, "field": field, "old": old,
+                        "new": new, "breaking": breaking, "route": route})
+
+    old_models, new_models = before["models"], after["models"]
+    for model in sorted(old_models.keys() | new_models.keys()):
+        if model not in new_models:
+            add("model_removed", model, breaking=True)
+            continue
+        if model not in old_models:
+            add("model_added", model)
+            continue
+        old_fields, new_fields = old_models[model]["fields"], new_models[model]["fields"]
+        for field in sorted(old_fields.keys() | new_fields.keys()):
+            if field not in new_fields:
+                add("field_removed", model, field, old_fields[field], breaking=True)
+            elif field not in old_fields:
+                add("field_added", model, field, new=new_fields[field],
+                    breaking=False)
+            elif old_fields[field]["type"] != new_fields[field]["type"]:
+                add("field_type_changed", model, field, old_fields[field], new_fields[field], True)
+            elif old_fields[field]["required"] and not new_fields[field]["required"]:
+                add("field_became_optional", model, field, old_fields[field], new_fields[field], True)
+            elif not old_fields[field]["required"] and new_fields[field]["required"]:
+                add("field_became_required", model, field, old_fields[field], new_fields[field])
+    old_routes, new_routes = before["routes"], after["routes"]
+    for route in sorted(old_routes.keys() | new_routes.keys()):
+        if route not in new_routes:
+            add("route_removed", ", ".join(old_routes[route]["models"]),
+                old=old_routes[route]["response"], breaking=True, route=route)
+        elif route not in old_routes:
+            add("route_added", ", ".join(new_routes[route]["models"]),
+                new=new_routes[route]["response"], route=route)
+        elif old_routes[route]["response"] != new_routes[route]["response"]:
+            add("route_response_changed", ", ".join(new_routes[route]["models"]),
+                old=old_routes[route]["response"], new=new_routes[route]["response"],
+                breaking=True, route=route)
+    return changes
