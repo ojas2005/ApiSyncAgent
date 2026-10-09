@@ -30,3 +30,8 @@ def parser():
     check.add_argument("--json-report", type=Path, help="Write machine-readable report")
     check.add_argument("--fail-on-breaking", action="store_true", help="Exit 2 for breaking changes")
     return top
+
+
+def write(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
