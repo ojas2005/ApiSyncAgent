@@ -65,3 +65,27 @@ class User(Base):
         self.assertTrue(fields["nickname"]["required"])
         self.assertNotIn("internal", fields)
         self.assertEqual(ts_type("Optional[list[int]]"), "Array<number> | null")
+
+    def test_cli_snapshot_and_check(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            backend = root / "backend"
+            frontend = root / "frontend"
+            backend.mkdir()
+            frontend.mkdir()
+            (backend / "api.py").write_text(OLD, encoding="utf-8")
+            baseline = root / "baseline.json"
+            self.assertEqual(main(["snapshot", "--backend", str(backend),
+                                   "--output", str(baseline)]), 0)
+            self.assertEqual(json.loads(baseline.read_text())["format_version"], 1)
+            (backend / "api.py").write_text(NEW, encoding="utf-8")
+            types = root / "api-contracts.ts"
+            report = root / "report.md"
+            self.assertEqual(main(["check", "--backend", str(backend), "--baseline", str(baseline),
+                                   "--frontend", str(frontend), "--types-out", str(types),
+                                   "--write-types", "--report", str(report),
+                                   "--fail-on-breaking"]), 2)
+            self.assertTrue(types.exists())
+            self.assertIn("BREAKING", report.read_text())
+            self.assertEqual(main(["check", "--backend", str(backend), "--baseline", str(baseline),
+                                   "--types-out", str(types), "--verify-types"]), 0)
