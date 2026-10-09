@@ -79,3 +79,7 @@ def main(argv=None):
     except (ValueError, OSError, KeyError, json.JSONDecodeError) as exc:
         print("api-contract-sync: {}".format(exc), file=sys.stderr)
         return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
