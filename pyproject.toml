@@ -9,3 +9,6 @@ description = "Detect FastAPI/Pydantic response contract changes and locate Type
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
+
+[project.scripts]
+api-contract-sync = "api_contract_sync.cli:main"
