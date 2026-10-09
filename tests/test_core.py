@@ -89,3 +89,23 @@ class User(Base):
             self.assertIn("BREAKING", report.read_text())
             self.assertEqual(main(["check", "--backend", str(backend), "--baseline", str(baseline),
                                    "--types-out", str(types), "--verify-types"]), 0)
+
+    def test_git_ref_reads_backend_before_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            backend = root / "backend"
+            backend.mkdir()
+            (backend / "api.py").write_text(OLD, encoding="utf-8")
+            def git(*args):
+                subprocess.run(["git", *args], cwd=str(root), check=True,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            git("init")
+            git("config", "user.name", "Test")
+            git("config", "user.email", "test@example.com")
+            git("add", "backend/api.py")
+            git("commit", "-m", "baseline")
+            (backend / "api.py").write_text(NEW, encoding="utf-8")
+            before = scan_git_ref(backend, "HEAD")
+            self.assertIn("username", before["models"]["UserResponse"]["fields"])
+            self.assertEqual(main(["check", "--backend", str(backend),
+                                   "--base-ref", "HEAD", "--fail-on-breaking"]), 2)
