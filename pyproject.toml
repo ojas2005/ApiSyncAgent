@@ -12,3 +12,6 @@ license = {text = "MIT"}
 
 [project.scripts]
 api-contract-sync = "api_contract_sync.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
