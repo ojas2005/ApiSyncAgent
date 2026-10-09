@@ -109,3 +109,7 @@ class User(Base):
             self.assertIn("username", before["models"]["UserResponse"]["fields"])
             self.assertEqual(main(["check", "--backend", str(backend),
                                    "--base-ref", "HEAD", "--fail-on-breaking"]), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
