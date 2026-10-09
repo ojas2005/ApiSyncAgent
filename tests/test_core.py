@@ -44,3 +44,24 @@ class ContractTests(unittest.TestCase):
             Path(directory, "profile.tsx").write_text("export const title = user.username;\n", encoding="utf-8")
             broader = frontend_uses(directory, changes, before, after)
             self.assertTrue(any(hit["confidence"] == "field-only" for hit in broader[1]))
+
+    def test_inheritance_alias_and_optional_types(self):
+        contract = parse_sources([("models.py", '''from pydantic import BaseModel, Field
+from typing import Optional, ClassVar
+class Base(BaseModel):
+    id: int
+    internal: ClassVar[str] = "x"
+class User(Base):
+    id: int = Field(serialization_alias="user_id")
+    name: str = Field(serialization_alias="full_name")
+    tags: list[str] = []
+    nickname: Optional[str]
+''')])
+        fields = contract["models"]["User"]["fields"]
+        self.assertIn("user_id", fields)
+        self.assertNotIn("id", fields)
+        self.assertIn("full_name", fields)
+        self.assertFalse(fields["tags"]["required"])
+        self.assertTrue(fields["nickname"]["required"])
+        self.assertNotIn("internal", fields)
+        self.assertEqual(ts_type("Optional[list[int]]"), "Array<number> | null")
