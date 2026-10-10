@@ -1,0 +1,11 @@
+# Copy to .github/workflows/api-contract.yml in the full-stack repository.
+# Adjust BACKEND_DIR, FRONTEND_DIR, and TYPES_OUT for that repository.
+name: API contract check
+
+on:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
