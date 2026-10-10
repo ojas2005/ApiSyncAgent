@@ -7,3 +7,4 @@ Use this playbook in a full-stack repository containing a FastAPI/Pydantic backe
 3. Read every breaking change and candidate consumer in the report. Candidate lines are static search hints; inspect the actual data flow before editing.
 4. Update frontend field access, adapters, types, and tests for confirmed changes. Preserve runtime compatibility if frontend and backend deploy independently.
 5. Run the frontend type checker and relevant integration tests. Regenerate the report after edits and review the TypeScript interface diff.
+6. Present the integration checklist, verification results, and any unresolved compatibility risks. Open a pull request with those changes when the user requests one and the repository has a remote.
