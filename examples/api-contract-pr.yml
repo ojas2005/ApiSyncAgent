@@ -16,3 +16,17 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -m pip install ./tools/api-contract-agent
+      - name: Compare response contracts
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BACKEND_DIR: backend
+          FRONTEND_DIR: frontend/src
+          TYPES_OUT: frontend/src/generated/api-contracts.ts
+        run: |
+          api-contract-sync check \
+            --backend "$BACKEND_DIR" \
+            --frontend "$FRONTEND_DIR" \
+            --base-ref "$BASE_SHA" \
+            --types-out "$TYPES_OUT" \
+            --verify-types \
+            --report api-contract-report.md
