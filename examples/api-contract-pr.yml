@@ -30,3 +30,9 @@ jobs:
             --types-out "$TYPES_OUT" \
             --verify-types \
             --report api-contract-report.md
+      - name: Publish checklist summary
+        if: always()
+        run: |
+          if [ -f api-contract-report.md ]; then
+            cat api-contract-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
