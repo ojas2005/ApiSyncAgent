@@ -36,3 +36,10 @@ jobs:
           if [ -f api-contract-report.md ]; then
             cat api-contract-report.md >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Upload integration checklist
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-contract-report
+          path: api-contract-report.md
+          if-no-files-found: ignore
