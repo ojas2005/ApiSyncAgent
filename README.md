@@ -8,3 +8,5 @@ A small, dependency-free CLI and agent playbook for keeping a FastAPI/Pydantic b
 - Added, removed, or changed FastAPI route response declarations such as `@app.get("/users/{id}", response_model=UserResponse)`.
 - Type and requiredness changes that can break consumers. A removed field, changed type, or newly optional response field is marked potentially breaking. Added response fields are reported for review.
 - Candidate TypeScript/JavaScript files and lines that mention the model or route and use an affected field.
+
+The report also suggests a *possible* rename when one removed and one added field share a model and type. Confirm semantics before changing frontend code.
