@@ -59,3 +59,11 @@ For automated code edits, give [AGENT.md](AGENT.md) to a coding agent in that re
 ## Scope and limitations
 
 The scanner uses Python syntax trees and requires no running backend. It recognizes `BaseModel` classes, annotated fields, common Python type expressions, and literal FastAPI route paths. It scans every `BaseModel`; a repository that also uses Pydantic request models should review those reported changes with their request semantics in mind. Dynamic schemas, computed fields, custom serializers, `response_model_include` / `exclude`, router prefixes, and runtime route registration are not resolved. Unsupported Python field types become `unknown` in TypeScript so the generated file stays type-safe; inspect and refine those manually. Frontend references are search candidates, not a proof of data flow.
+
+## Development
+
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+```
+
+The code is MIT licensed. See [LICENSE](LICENSE).
