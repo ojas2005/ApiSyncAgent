@@ -20,3 +20,19 @@ python3 -m pip install -e .
 ```
 
 Run `api-contract-sync --help` for all options. `python3 -m api_contract_sync` also works after installation.
+
+## Local workflow
+
+From the full-stack repository root:
+
+```bash
+api-contract-sync check \
+  --backend backend \
+  --frontend frontend/src \
+  --base-ref origin/main \
+  --types-out frontend/src/generated/api-contracts.ts \
+  --write-types \
+  --report api-contract-report.md \
+  --json-report api-contract-report.json \
+  --fail-on-breaking
+```
