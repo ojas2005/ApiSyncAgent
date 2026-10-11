@@ -10,3 +10,13 @@ A small, dependency-free CLI and agent playbook for keeping a FastAPI/Pydantic b
 - Candidate TypeScript/JavaScript files and lines that mention the model or route and use an affected field.
 
 The report also suggests a *possible* rename when one removed and one added field share a model and type. Confirm semantics before changing frontend code.
+
+## Install
+
+Python 3.9 or newer is required. No runtime dependencies are needed.
+
+```bash
+python3 -m pip install -e .
+```
+
+Run `api-contract-sync --help` for all options. `python3 -m api_contract_sync` also works after installation.
