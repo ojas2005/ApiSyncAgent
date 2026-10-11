@@ -47,3 +47,5 @@ api-contract-sync check --backend backend --frontend frontend/src \
   --baseline api-contract-baseline.json --types-out frontend/src/generated/api-contracts.ts \
   --write-types --report api-contract-report.md
 ```
+
+For the example in the request, replacing `username: str` with `full_name: str` reports `UserResponse.username` as removed, `UserResponse.full_name` as added, suggests the possible rename, and lists matching frontend access sites.
