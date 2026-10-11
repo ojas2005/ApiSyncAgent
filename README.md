@@ -38,3 +38,12 @@ api-contract-sync check \
 ```
 
 Review the generated type diff and the checklist. The tool returns exit code `2` when `--fail-on-breaking` finds a potentially breaking change. It returns `3` when `--verify-types` finds stale generated types, and `1` for input or parsing errors. Without `--fail-on-breaking`, reported contract changes do not fail the command.
+
+For repositories without a suitable Git base ref, save a baseline before editing the backend:
+
+```bash
+api-contract-sync snapshot --backend backend --output api-contract-baseline.json
+api-contract-sync check --backend backend --frontend frontend/src \
+  --baseline api-contract-baseline.json --types-out frontend/src/generated/api-contracts.ts \
+  --write-types --report api-contract-report.md
+```
