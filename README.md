@@ -49,3 +49,9 @@ api-contract-sync check --backend backend --frontend frontend/src \
 ```
 
 For the example in the request, replacing `username: str` with `full_name: str` reports `UserResponse.username` as removed, `UserResponse.full_name` as added, suggests the possible rename, and lists matching frontend access sites.
+
+## Pull request automation
+
+Copy this project into `tools/api-contract-agent` in the full-stack repository. Copy [the workflow template](examples/api-contract-pr.yml) to `.github/workflows/api-contract.yml`, then set `BACKEND_DIR`, `FRONTEND_DIR`, and `TYPES_OUT` to the repository's paths. Commit the generated TypeScript file after running `--write-types` locally. On each pull request, the workflow compares against the PR base commit, checks whether generated types are current, and uploads the checklist as an artifact. Teams that want a strict compatibility gate can add `--fail-on-breaking` to the workflow command.
+
+For automated code edits, give [AGENT.md](AGENT.md) to a coding agent in that repository. It describes how to inspect candidate consumers, make confirmed frontend changes, verify them, and prepare a PR when requested. This CLI does not rewrite frontend behavior based on a static guess.
